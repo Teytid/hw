@@ -1,0 +1,158 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security;
+using System.Text;
+
+namespace HomeWork2
+{
+    public delegate void ErrorNotificationType(string message);
+
+    class Program
+    {
+        static StringBuilder errors = new StringBuilder();
+        public static void Main(string[] args)
+        {
+            Calculator.operations.Add("+", (x, y) => { return x + y; });
+            Calculator.operations.Add("-", (x, y) => { return x - y; });
+            Calculator.operations.Add("*", (x, y) => { return x * y; });
+            Calculator.operations.Add("/", (x, y) => { return x / y; });
+            Calculator.operations.Add("^", (x, y) => { return Math.Pow(x, y); });
+
+            string path1 = "expressions.txt";
+            string path2 = "answers.txt";
+            string path3 = "expressions_checker.txt";
+            string path4 = "results.txt";
+            Calculator.Counter(path1, path2);
+            Calculator.Checker(path2, path3, path4);
+        }
+        public static void ConsoleErrorHandler(string message)
+        {
+            Console.WriteLine(message + " " + DateTime.Now);
+        }
+
+        public static void ResultErrorHandler(string message)
+        {
+            
+            errors.Append(message);
+        }
+    }
+
+    public class Calculator
+    {
+        public static event ErrorNotificationType ErrorNotification = Program.ConsoleErrorHandler;
+
+
+        public delegate double MathOperation(double a, double b);
+
+        public static Dictionary<string, MathOperation> operations = new Dictionary<string, MathOperation>();
+
+        public static double Calculate(string expression)
+        {
+            string[] arguments = expression.Split(' ');
+
+            if(double.TryParse(arguments[0],out double operandA)&double.TryParse(arguments[2], out double operandB))
+            {
+                string operatorExpr = arguments[1];
+                if (operations.ContainsKey(operatorExpr))
+                {
+                    return operations[operatorExpr](operandA, operandB);
+                }
+            }
+
+            return 0;
+        }
+
+        public static void Counter(string path1, string path2)
+        {
+            string[] strings = new string[0];
+            string answer = "";
+            try
+            {
+                strings = File.ReadAllLines(path1);
+                for (int i = 0; i < strings.Length; i++)
+                {
+                    answer += $"{(Calculate(strings[i])):F3}{Environment.NewLine}";
+                }
+                File.WriteAllText(path2, answer);
+
+            }
+            catch (IOException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (SecurityException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (Exception e)
+            {
+                ErrorNotification(e.Message);
+            }
+            
+        }
+
+        public static void Checker(string path1, string path2, string path3)
+        {
+            string[] strings = new string[0];
+            string[] answer = new string[0];
+            string answer2 = "";
+            try
+            {
+                int errors = 0;
+                strings = File.ReadAllLines(path1);
+                answer = File.ReadAllLines(path2);
+                for (int i = 0; i < strings.Length; i++)
+                {
+                    if (double.TryParse(answer[i], out double answerDouble)&double.TryParse(strings[i], out double stringsDouble))
+                    {
+                        if (answerDouble == stringsDouble)
+                        {
+                            answer2 += $"OK{Environment.NewLine}";
+                        }
+                        else
+                        {
+                            answer2 += $"Error{Environment.NewLine}";
+                            errors++;
+                        }
+                    }
+                    else
+                    {
+                        if (answer[i]==strings[i])
+                        {
+                            answer2 += $"OK{Environment.NewLine}";
+                        }
+                        else
+                        {
+                            answer2 += $"Error{Environment.NewLine}";
+                            errors++;
+                        }
+                    }
+                }
+
+                answer2 += $"{errors} {Environment.NewLine}";
+                File.WriteAllText(path3, answer2);
+            }
+            catch (IOException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (SecurityException e)
+            {
+                ErrorNotification(e.Message);
+            }
+            catch (Exception e)
+            {
+                ErrorNotification(e.Message);
+            }
+        }
+    }
+}
