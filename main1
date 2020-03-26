@@ -1,0 +1,102 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+
+namespace Seminar_18._01
+{
+    class Program
+    {
+        internal delegate double MathOperation(double a, double b);
+
+        // Объявляем библиотеку операций.
+        public static Dictionary<string, MathOperation> operations = new Dictionary<string, MathOperation>();
+
+        public static void Main(string[] args)
+        {
+            // Добавляем члены в библиотеку с операциями.
+            operations.Add("+", (x, y) => { return x + y; });
+            operations.Add("-", (x, y) => { return x - y; });
+            operations.Add("*", (x, y) => { return x * y; });
+            operations.Add("/", (x, y) => { return x / y; });
+            operations.Add("^", (x, y) => { return Math.Pow(x, y); });
+
+            // Задаем нужные нам пути для файлов.
+            string path1 = "expressions.txt";
+            string path2 = "answers.txt";
+            string path3 = "expressions_checker.txt";
+            string path4 = "results.txt";
+            // Нужные нам методы.
+            Counter(path1, path2);
+            Checker(path2, path3, path4);
+        }
+
+        // Метод парса строки и счета с нужной операцией.
+        public static double Calculate(string expression)
+        {
+            string[] arguments = expression.Split(' ');
+
+            double operandA = double.Parse(arguments[0]);
+            string operatorExpr = arguments[1];
+            double operandB = double.Parse(arguments[2]);
+            return operations[operatorExpr](operandA, operandB);
+        }
+
+        // Счет операций из файла с использованием метода счета из строчки.
+        public static void Counter(string path1, string path2)
+        {
+            string[] strings = new string[0];
+            string answer = "";
+            try
+            {
+                strings = File.ReadAllLines(path1);
+                for (int i = 0; i < strings.Length; i++)
+                {
+                    answer += $"{(Calculate(strings[i])):F3} {Environment.NewLine}";
+                }
+
+                File.WriteAllText(path2, answer);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        // Проверка равенства значений, полученных при счете, и значений из файла.
+        public static void Checker(string path1, string path2, string path3)
+        {
+            string[] strings = new string[0];
+            string[] answer = new string[0];
+            string answer2 = "";
+            try
+            {
+                int errors = 0;
+                strings = File.ReadAllLines(path1);
+                answer = File.ReadAllLines(path2);
+                for (int i = 0; i < strings.Length; i++)
+                {
+                    double answerDouble = double.Parse(answer[i]);
+                    double stringsDouble = double.Parse(strings[i]);
+                    if (answerDouble == stringsDouble)
+                    {
+                        answer2 += $"OK {Environment.NewLine}";
+                    }
+                    else
+                    {
+                        answer2 += $"Error {Environment.NewLine}";
+                        errors++;
+                    }
+                    
+                }
+
+                answer2 += $"{errors} {Environment.NewLine}";
+                File.WriteAllText(path3, answer2);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+}
